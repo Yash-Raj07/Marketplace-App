@@ -11,27 +11,19 @@ router.post('/:productId', authenticate, async (req, res) => {
     const userId = req.userId;
 
     // Check if product exists
-    const product = await getAsync('SELECT id FROM products WHERE id = ?', [productId]);
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
+        const token = jwt.sign({ id: result.id, email }, process.env.JWT_SECRET, {
+        expiresIn: '7d',
+      });
 
-    try {
-      await runAsync(
-        'INSERT INTO favorites (user_id, product_id) VALUES (?, ?)',
-        [userId, productId]
-      );
-      res.status(201).json({ message: 'Added to favorites' });
+      res.status(201).json({
+        token,
+        user: { id: result.id, email, name },
+      });
     } catch (err) {
-      if (err.message.includes('UNIQUE constraint failed')) {
-        return res.status(400).json({ error: 'Already in favorites' });
-      }
-      throw err;
+      res.status(500).json({ error: err.message });
     }
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
-});
+);
 
 // Remove from favorites
 router.delete('/:productId', authenticate, async (req, res) => {
