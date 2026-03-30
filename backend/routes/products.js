@@ -97,58 +97,16 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update product
-router.put(
-  '/:id',
+router.post(
+  '/',
   authenticate,
   [
-    body('title').optional().notEmpty(),
-    body('description').optional().notEmpty(),
-    body('price').optional().isFloat({ min: 0 }),
-    body('image').optional().isURL(),
+    body('title').notEmpty().withMessage('Title is required'),
+    body('description').notEmpty().withMessage('Description is required'),
+    body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+    body('image').optional().isURL().withMessage('Image must be a valid URL'),
   ],
   handleValidationErrors,
-  async (req, res) => {
-    try {
-      const { title, description, price, image } = req.body;
-      const updates = [];
-      const params = [];
-
-      if (title !== undefined) {
-        updates.push('title = ?');
-        params.push(title);
-      }
-      if (description !== undefined) {
-        updates.push('description = ?');
-        params.push(description);
-      }
-      if (price !== undefined) {
-        updates.push('price = ?');
-        params.push(parseFloat(price));
-      }
-      if (image !== undefined) {
-        updates.push('image = ?');
-        params.push(image);
-      }
-
-      if (updates.length === 0) {
-        return res.status(400).json({ error: 'No fields to update' });
-      }
-
-      params.push(req.params.id);
-
-      await runAsync(
-        `UPDATE products SET ${updates.join(', ')} WHERE id = ?`,
-        params
-      );
-
-      const product = await getAsync('SELECT * FROM products WHERE id = ?', [req.params.id]);
-      res.json(product);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  }
-);
-
 // Delete product
 router.delete('/:id', authenticate, async (req, res) => {
   try {
